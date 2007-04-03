@@ -77,6 +77,9 @@ public final class RhinoCore implements ScopeProvider {
     // the prototype for HopObject
     ScriptableObject hopObjectProto;
 
+    // the JavaObject prototype
+    ScriptableObject javaObjectProto;
+
     // the prototype for path objects
     PathWrapper pathProto;
 
@@ -159,7 +162,8 @@ public final class RhinoCore implements ScopeProvider {
 
             pathProto = new PathWrapper(this);
 
-            hopObjectProto =  HopObject.init(this);
+            hopObjectProto = HopObject.init(this);
+            javaObjectProto = JavaObject.init(this);
             // use lazy loaded constructors for all extension objects that
             // adhere to the ScriptableObject.defineClass() protocol
             new LazilyLoadedCtor(global, "File",
@@ -249,6 +253,8 @@ public final class RhinoCore implements ScopeProvider {
                 op = global;
             } else if ("hopobject".equals(lowerCaseName)) {
                 op = hopObjectProto;
+            } else if ("javaobject".equals(lowerCaseName)) {
+                op = javaObjectProto;
             } else {
                 op = new HopObject(name, this);
             }
@@ -313,7 +319,9 @@ public final class RhinoCore implements ScopeProvider {
         String name = prototype.getName();
         String lowerCaseName = prototype.getLowerCaseName();
 
-        if (!"global".equals(lowerCaseName) && !"hopobject".equals(lowerCaseName)) {
+        if (!"global".equals(lowerCaseName) &&
+            !"hopobject".equals(lowerCaseName) &&
+            !"javaobject".equals(lowerCaseName)) {
 
             // get the prototype's prototype if possible and necessary
             TypeInfo parentType = null;
@@ -324,9 +332,13 @@ public final class RhinoCore implements ScopeProvider {
                 parentType = getPrototypeInfo(parent.getName());
             }
 
-            if (parentType == null && !app.isJavaPrototype(name)) {
-                // FIXME: does this ever occur?
-                parentType = getPrototypeInfo("hopobject");
+            if (parentType == null) {
+                if (app.isJavaPrototype(name)) {
+                    parentType = getPrototypeInfo("javaobject");
+                } else {
+                    // FIXME: does this ever occur?
+                    parentType = getPrototypeInfo("hopobject");
+                }
             }
 
             type.setParentType(parentType);
@@ -642,7 +654,7 @@ public final class RhinoCore implements ScopeProvider {
 
             if (op == null) {
                 // no prototype found, return an unscripted wrapper
-                wrapper = new NativeJavaObject(global, e, e.getClass());
+                wrapper = new NativeJavaObject(global, e, null);
             } else {
                 wrapper = new JavaObject(global, e, prototypeName, op, this);
             }
