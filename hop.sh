@@ -69,5 +69,13 @@ if [ "$HOP_HOME" ]; then
    SWITCHES="$SWITCHES -h $HOP_HOME"
 fi
 
+. /etc/profile
+
+umask 0002
+
+ulimit -m 6442450944
+ulimit -Hn  65535
+ulimit -Sn  32000
+
 # Invoke the Java VM
 $JAVACMD $JAVA_OPTIONS -jar "$INSTALL_DIR/launcher.jar" $SWITCHES
