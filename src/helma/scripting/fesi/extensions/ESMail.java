@@ -49,6 +49,8 @@ public class ESMail extends ESObject implements Serializable {
     public static final int BCC = 22;
     public static final int FROM = 23;
     public static final int REPLYTO = 24;
+    public static final int SENTDATE = 25;
+    public static final int HEADER = 31;
     public static final int SEND = 30;
     MailExtension mailx;
     Properties mprops;
@@ -198,6 +200,40 @@ public class ESMail extends ESObject implements Serializable {
     /**
      *
      *
+     * @param val ...
+     *
+     * @throws Exception ...
+     */
+    public void setSentDate(ESValue val) throws Exception {
+        if (val == null) {
+            message.setSentDate(null);
+            return;
+        }
+        Object data = val.toJavaObject();
+        if (data == null)
+            message.setSentDate(null);
+        else if (data instanceof java.util.Date)
+            message.setSentDate((java.util.Date)data);
+        else message.setSentDate(new java.util.Date());
+    }
+
+    /**
+     *
+     *
+     * @param val ...
+     *
+     * @throws Exception ...
+     */
+    public void setHeader(ESValue headerName, ESValue headerValue) throws Exception {
+        if ((headerName == null) || (headerValue == null)) {
+            return;
+        }
+        message.setHeader(headerName.toString(), MimeUtility.encodeWord(headerValue.toString()));
+    }
+
+    /**
+     *
+     *
      * @param add ...
      *
      * @throws Exception ...
@@ -322,6 +358,34 @@ public class ESMail extends ESObject implements Serializable {
         }
 
         message.addRecipient(Message.RecipientType.BCC, address);
+    }
+
+    /**
+     *
+     *
+     * @param val ...
+     *
+     * @throws Exception ...
+     */
+    public void addHeader(ESValue headerName, ESValue headerValue) throws Exception {
+        if ((headerName == null) || (headerValue == null)) {
+            return;
+        }
+        message.addHeader(headerName.toString(), MimeUtility.encodeWord(headerValue.toString()));
+    }
+
+    /**
+     *
+     *
+     * @param val ...
+     *
+     * @throws Exception ...
+     */
+    public void removeHeader(ESValue headerName) throws Exception {
+        if (headerName == null) {
+            return;
+        }
+        message.removeHeader(headerName.toString());
     }
 
     /**

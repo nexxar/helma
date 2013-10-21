@@ -81,6 +81,15 @@ public class MailExtension extends Extension {
         esMailPrototype.putHiddenProperty("setFrom",
                                           new MailSetFrom("setFrom", evaluator, fp));
 
+        esMailPrototype.putHiddenProperty("setHeader",
+                                          new MailSetHeader("setHeader", evaluator, fp));
+        esMailPrototype.putHiddenProperty("addHeader",
+                                          new MailAddHeader("addHeader", evaluator, fp));
+        esMailPrototype.putHiddenProperty("removeHeader",
+                                          new MailRemoveHeader("removeHeader", evaluator, fp));
+        esMailPrototype.putHiddenProperty("setSentDate",
+                                          new MailSetSentDate("setSentDate", evaluator, fp));
+
         p = new MailAddTo("addTo", evaluator, fp);
         esMailPrototype.putHiddenProperty("addTo", p);
         esMailPrototype.putHiddenProperty("setTo", p);
@@ -164,6 +173,98 @@ public class MailExtension extends Extension {
                 mail.setStatus(ESMail.MIMEPART);
 
                 return ESBoolean.makeBoolean(false);
+            }
+
+            return ESBoolean.makeBoolean(true);
+        }
+    }
+
+    class MailSetSentDate extends BuiltinFunctionObject {
+        MailSetSentDate(String name, Evaluator evaluator, FunctionPrototype fp) {
+            super(fp, evaluator, name, 1);
+        }
+
+        public ESValue callFunction(ESObject thisObject, ESValue[] arguments)
+                             throws EcmaScriptException {
+            ESMail mail = (ESMail) thisObject;
+
+            if (arguments.length == 1) {
+                try {
+                    mail.setSentDate(arguments[0]);
+                } catch (Exception x) {
+                    mail.setStatus(ESMail.SENTDATE);
+
+                    return ESBoolean.makeBoolean(false);
+                }
+            }
+
+            return ESBoolean.makeBoolean(true);
+        }
+    }
+
+    class MailSetHeader extends BuiltinFunctionObject {
+        MailSetHeader(String name, Evaluator evaluator, FunctionPrototype fp) {
+            super(fp, evaluator, name, 1);
+        }
+
+        public ESValue callFunction(ESObject thisObject, ESValue[] arguments)
+                             throws EcmaScriptException {
+            ESMail mail = (ESMail) thisObject;
+
+            if (arguments.length == 2) {
+                try {
+                    mail.setHeader(arguments[0], arguments[1]);
+                } catch (Exception x) {
+                    mail.setStatus(ESMail.HEADER);
+
+                    return ESBoolean.makeBoolean(false);
+                }
+            }
+
+            return ESBoolean.makeBoolean(true);
+        }
+    }
+
+    class MailAddHeader extends BuiltinFunctionObject {
+        MailAddHeader(String name, Evaluator evaluator, FunctionPrototype fp) {
+            super(fp, evaluator, name, 1);
+        }
+
+        public ESValue callFunction(ESObject thisObject, ESValue[] arguments)
+                             throws EcmaScriptException {
+            ESMail mail = (ESMail) thisObject;
+
+            if (arguments.length == 2) {
+                try {
+                    mail.addHeader(arguments[0], arguments[1]);
+                } catch (Exception x) {
+                    mail.setStatus(ESMail.HEADER);
+
+                    return ESBoolean.makeBoolean(false);
+                }
+            }
+
+            return ESBoolean.makeBoolean(true);
+        }
+    }
+
+    class MailRemoveHeader extends BuiltinFunctionObject {
+        MailRemoveHeader(String name, Evaluator evaluator, FunctionPrototype fp) {
+            super(fp, evaluator, name, 1);
+        }
+
+        public ESValue callFunction(ESObject thisObject, ESValue[] arguments)
+                             throws EcmaScriptException {
+            ESMail mail = (ESMail) thisObject;
+
+            if (arguments.length == 1) {
+                try {
+                    mail.removeHeader(arguments[0]);
+                } catch (Exception x) {
+                    mail.setStatus(ESMail.HEADER);
+
+                    return ESBoolean.makeBoolean(false);
+                }
             }
 
             return ESBoolean.makeBoolean(true);
