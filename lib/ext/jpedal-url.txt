@@ -1,0 +1,8 @@
+Library to read PDF files
+http://www.jpedal.org/
+
+http://www.jpedal.org/download/jpedal_trial.jar
+http://www.jpedal.org/download/lgpl/jpedal_lgpl.jar
+http://www.jpedal.org/download/lgpl/jpedal_lgpl_src.zip
+
+
