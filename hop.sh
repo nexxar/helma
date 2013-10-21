@@ -1,6 +1,9 @@
 #!/bin/sh
 # Shell script for starting Helma with a JDK-like virtual machine.
 
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH="`dirname $SCRIPT`"
+
 # To add JAR files to the classpath, simply place them into the
 # lib/ext directory.
 
@@ -33,17 +36,14 @@ else
 fi
 
 # Get the Helma installation directory
-INSTALL_DIR="${0%/*}"
-cd $INSTALL_DIR
-INSTALL_DIR=$PWD
+INSTALL_DIR="$SCRIPTPATH"
 
 # get HOP_HOME variable if it isn't set
 if test -z "$HOP_HOME"; then
   # try to get HOP_HOME from script file and pwd
   # strip everyting behind last slash
-  HOP_HOME="${0%/*}"
+  HOP_HOME="$SCRIPTPATH"
   cd $HOP_HOME
-  HOP_HOME=$PWD
 else
   cd $HOP_HOME
 fi
