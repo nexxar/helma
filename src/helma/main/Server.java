@@ -440,6 +440,7 @@ public class Server implements IPathElement, Runnable {
             }
 
             if (xmlrpcPort != null) {
+                XmlRpc.setKeepAlive(true);
                 String xmlparser = sysProps.getProperty("xmlparser");
 
                 if (xmlparser != null) {
@@ -542,6 +543,14 @@ public class Server implements IPathElement, Runnable {
                 ajp13.start();
             } catch (Exception m) {
                 getLogger().log("Error starting AJP13 listener: " + m);
+            }
+        }
+
+        if (xmlrpc != null) {
+            try {
+                xmlrpc.start();
+            } catch (Exception m) {
+                getLogger().log("Error starting XML-RPC listener: " + m);
             }
         }
 
