@@ -77,9 +77,14 @@ ulimit -m 6442450944
 ulimit -Hn  65535
 ulimit -Sn  32000
 
+export JARS=$JARS:lib/ext/commons-logging.jar
+export JARS=$JARS:lib/ext/helmagroups.jar
+export JARS=$JARS:lib/ext/javagroups-all.jar
+
 # options to pass to the Java virtual machine
 JAVA_OPTIONS="-server -d64 -Xincgc -Xmx5120m -Xms5120m -Xss8192k -Djava.awt.headless=true -Dfile.encoding=ISO-8859-1 -classpath $CLASSPATH:$HOP_HOME/classes"
 
 
 # Invoke the Java VM
-$JAVACMD $JAVA_OPTIONS -jar "$INSTALL_DIR/launcher.jar" $SWITCHES
+echo $$ > /var/run/helma/helma.pid
+exec $JAVACMD $JAVA_OPTIONS -jar "$INSTALL_DIR/launcher.jar" $SWITCHES
