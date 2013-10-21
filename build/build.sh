@@ -2,6 +2,9 @@
 
 # export JAVA_HOME=/usr/lib/j2sdk1.4.0
 
+JAVA_BIN="`whereis -b -B /usr/bin  -f javac | sed -e 's#javac: ##'`"
+[ -z "$JAVA_HOME" -a ! -z "$JAVA_BIN" ] && JAVA_HOME=$(readlink -f $JAVA_BIN | sed "s:bin/javac::")
+
 #--------------------------------------------
 # No need to edit anything past here
 #--------------------------------------------
