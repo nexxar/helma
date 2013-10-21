@@ -106,7 +106,7 @@ public abstract class ESObject extends ESValue {
     
 
     /**
-     *  Allow the prototype to be set, added 2001-04-05 by Hannes Wallnöfer
+     *  Allow the prototype to be set, added 2001-04-05 by Hannes Wallnoefer
      *
      * @param prototype     The new prototype object
      */
