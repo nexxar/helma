@@ -114,6 +114,7 @@ public class MimePart implements Serializable {
      * @return ...
      */
     public String writeToFile(String dir, String fname) {
+        FileOutputStream targetOut = null;
         try {
             File base = new File(dir);
 
@@ -141,12 +142,18 @@ public class MimePart implements Serializable {
 
             File file = new File(base, filename);
             FileOutputStream fout = new FileOutputStream(file);
+            targetOut = fout;
 
             fout.write(getContent());
             fout.close();
 
             return filename;
         } catch (Exception x) {
+            if (targetOut != null) {
+                try {
+                    targetOut.close();
+                } catch(Exception ex2) {}
+            }
             return null;
         }
     }

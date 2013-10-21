@@ -830,6 +830,7 @@ public final class HopExtension {
                 return ESNull.theNull;
             }
 
+            InputStream inStream = null;
             try {
                 URL url = new URL(arguments[0].toString());
                 URLConnection con = url.openConnection();
@@ -874,6 +875,7 @@ public final class HopExtension {
 
                 if ((length != 0) && (resCode != 304)) {
                     InputStream in = new BufferedInputStream(con.getInputStream());
+                    inStream = in;
                     byte[] b = new byte[1024];
                     int read;
 
@@ -893,6 +895,11 @@ public final class HopExtension {
 
                 return ESLoader.normalizeObject(mime, evaluator);
             } catch (Exception ignore) {
+                if (inStream != null) {
+                    try {
+                        inStream.close();
+                    } catch(Exception ex) {}
+                }
             }
 
             return ESNull.theNull;

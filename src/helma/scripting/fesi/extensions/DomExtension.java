@@ -124,10 +124,12 @@ public class DomExtension extends Extension {
                 throw new EcmaScriptException("First argument in Xml.write() is not an hopobject");
             }
 
+            XmlWriter targetWriter = null;
             try {
                 File tmpFile = new File(arguments[1].toString() + ".tmp." +
                                         XmlWriter.generateID());
                 XmlWriter writer = new XmlWriter(tmpFile, "UTF-8");
+                targetWriter = writer;
 
                 writer.setDatabaseMode(false);
 
@@ -141,6 +143,11 @@ public class DomExtension extends Extension {
                 this.evaluator.engine.getApplication().logEvent("wrote xml to " +
                                                                 finalFile.getAbsolutePath());
             } catch (IOException io) {
+                if (targetWriter != null) {
+                    try {
+                        targetWriter.close();
+                    } catch(Exception ex) {}
+                }
                 throw new EcmaScriptException(io.toString());
             }
 

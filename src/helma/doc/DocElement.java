@@ -252,9 +252,12 @@ public abstract class DocElement implements IPathElement {
      * utility: read a complete file into a string
      */
     protected static String readFile(File file) {
+        BufferedReader inReader = null;
         try {
             StringBuffer buf = new StringBuffer();
             BufferedReader in = new BufferedReader(new FileReader(file));
+            inReader = in;
+            
             String line = in.readLine();
 
             while (line != null) {
@@ -266,6 +269,11 @@ public abstract class DocElement implements IPathElement {
 
             return buf.toString();
         } catch (IOException e) {
+            if (inReader != null) {
+                try {
+                    inReader.close();
+                } catch(Exception ex) {}
+            }
             return ("");
         }
     }

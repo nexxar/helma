@@ -152,8 +152,10 @@ public class ActionFile implements Updatable {
         if (content != null) {
             return content;
         } else {
+            FileReader inReader = null;
             try {
                 FileReader reader = new FileReader(file);
+                inReader = reader;
                 char[] cbuf = new char[(int) file.length()];
 
                 reader.read(cbuf);
@@ -161,6 +163,11 @@ public class ActionFile implements Updatable {
 
                 return new String(cbuf);
             } catch (Exception filex) {
+                if (inReader != null) {
+                    try {
+                        inReader.close();
+                    } catch(Exception ex) {}
+                }
                 app.logEvent("Error reading " + this + ": " + filex);
 
                 return null;

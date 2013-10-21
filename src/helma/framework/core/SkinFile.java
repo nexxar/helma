@@ -98,14 +98,22 @@ public final class SkinFile implements Updatable {
     }
 
     private void read() {
+        FileReader inReader = null;
         try {
             FileReader reader = new FileReader(file);
+            inReader = reader;
+            
             char[] c = new char[(int) file.length()];
             int length = reader.read(c);
 
             reader.close();
             skin = new Skin(c, length, app);
         } catch (IOException x) {
+            if (inReader != null) {
+                try {
+                    inReader.close();
+                } catch(Exception ex) {}
+            }
             app.logEvent("Error reading Skin " + file + ": " + x);
         }
 

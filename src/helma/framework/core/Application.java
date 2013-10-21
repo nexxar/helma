@@ -1771,8 +1771,10 @@ public final class Application implements IPathElement, Runnable {
             f = new File(dbDir, "sessions");
         }
 
+        OutputStream outTarget = null;
         try {
             OutputStream ostream = new BufferedOutputStream(new FileOutputStream(f));
+            outTarget = ostream;
             ObjectOutputStream p = new ObjectOutputStream(ostream);
 
             synchronized (sessions) {
@@ -1787,6 +1789,11 @@ public final class Application implements IPathElement, Runnable {
             ostream.close();
             logEvent("stored " + sessions.size() + " sessions in file");
         } catch (Exception e) {
+            if (outTarget != null) {
+                try {
+                    outTarget.close();
+                } catch(Exception ex) {}
+            }
             logEvent("error storing session data: " + e.toString());
         }
     }
@@ -1812,10 +1819,13 @@ public final class Application implements IPathElement, Runnable {
 
         long now = System.currentTimeMillis();
 
+        InputStream in = null;
         try {
             // load the stored data:
             InputStream istream = new BufferedInputStream(new FileInputStream(f));
             ObjectInputStream p = new ObjectInputStream(istream);
+            in = istream;
+            
             int size = p.readInt();
             int ct = 0;
             Hashtable newSessions = new Hashtable();
@@ -1836,6 +1846,11 @@ public final class Application implements IPathElement, Runnable {
             sessions = newSessions;
             logEvent("loaded " + newSessions.size() + " sessions from file");
         } catch (Exception e) {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch(Exception ex) {}
+            }
             logEvent("error loading session data: " + e.toString());
         }
     }

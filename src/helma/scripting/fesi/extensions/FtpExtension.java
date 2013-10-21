@@ -162,16 +162,23 @@ class ESFtpClient extends ESObject {
             return ESBoolean.makeBoolean(false);
         }
 
+        InputStream inFile = null;
         try {
             String fn = arguments[0].toString();
             File f = (localDir == null) ? new File(fn) : new File(localDir, fn);
             InputStream fin = new BufferedInputStream(new FileInputStream(f));
+            inFile = fin;
 
             ftpclient.storeFile(arguments[1].toString(), fin);
             fin.close();
 
             return ESBoolean.makeBoolean(true);
         } catch (Exception wrong) {
+            if (inFile != null) {
+                try {
+                    inFile.close();
+                } catch(Exception ex) {}
+            }
         }
 
         return ESBoolean.makeBoolean(false);
@@ -214,16 +221,23 @@ class ESFtpClient extends ESObject {
             return ESBoolean.makeBoolean(false);
         }
 
+        OutputStream outFile = null;
         try {
             String fn = arguments[0].toString();
             File f = (localDir == null) ? new File(fn) : new File(localDir, fn);
             OutputStream out = new BufferedOutputStream(new FileOutputStream(f));
+            outFile = out;
 
             ftpclient.retrieveFile(arguments[0].toString(), out);
             out.close();
 
             return ESBoolean.makeBoolean(true);
         } catch (Exception wrong) {
+            if (outFile != null) {
+                try {
+                    outFile.close();
+                } catch(Exception ex) {}
+            }
         }
 
         return ESBoolean.makeBoolean(false);

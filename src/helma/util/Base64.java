@@ -225,10 +225,13 @@ public static void main(String[] args)
 private static byte[] readBytes(File file)
 {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    InputStream in = null;
     try
     {
         InputStream fis = new FileInputStream(file);
         InputStream is = new BufferedInputStream(fis);
+        in = is;
+        
         int count = 0;
         byte[] buf = new byte[16384];
         while ((count=is.read(buf)) != -1) {
@@ -236,7 +239,14 @@ private static byte[] readBytes(File file)
         }
         is.close();
     }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { 
+        if (in != null) {
+            try {
+                in.close();
+            } catch(Exception ex) {}
+        }
+        e.printStackTrace(); 
+    }
 
     return baos.toByteArray();
 }
@@ -244,10 +254,12 @@ private static byte[] readBytes(File file)
 private static char[] readChars(File file)
 {
     CharArrayWriter caw = new CharArrayWriter();
+    Reader inReader = null;
     try
     {
         Reader fr = new FileReader(file);
         Reader in = new BufferedReader(fr);
+        inReader = in;
         int count = 0;
         char[] buf = new char[16384];
         while ((count=in.read(buf)) != -1) {
@@ -255,29 +267,53 @@ private static char[] readChars(File file)
         }
         in.close();
     }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { e.printStackTrace(); 
+        if (inReader != null) {
+            try {
+                inReader.close();
+            } catch(Exception ex) {}
+        }
+    }
 
     return caw.toCharArray();
 }
 
 private static void writeBytes(File file, byte[] data) {
+    OutputStream out = null;
     try {
         OutputStream fos = new FileOutputStream(file);
         OutputStream os = new BufferedOutputStream(fos);
+        out = os;
         os.write(data);
         os.close();
     }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { 
+        e.printStackTrace(); 
+        if (out != null) {
+            try {
+                out.close();
+            } catch(Exception ex) {}
+        }
+    }
 }
 
 private static void writeChars(File file, char[] data) {
+    Writer out = null;
     try {
         Writer fos = new FileWriter(file);
         Writer os = new BufferedWriter(fos);
+        out = os;
         os.write(data);
         os.close();
     }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { 
+        e.printStackTrace(); 
+        if (out != null) {
+            try {
+                out.close();
+            } catch(Exception ex) {}
+        }
+    }
 }
 ///////////////////////////////////////////////////
 // end of test code.

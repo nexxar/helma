@@ -146,6 +146,11 @@ public class FesiActionAdapter {
                 fpl = (ASTFormalParameterList) parser.FormalParameterList();
                 is.close();
             } catch (ParseException x) {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch(Exception ex) {}
+                }
                 throw new EcmaScriptParseException(x,
                                                    new FileEvaluationSource(sourceName,
                                                                             null));
@@ -168,6 +173,10 @@ public class FesiActionAdapter {
             app.logEvent("Error parsing file " + app.getName() + ":" + sourceName + ": " +
                          x);
             throw new RuntimeException(x.getMessage());
+        } finally {
+            try {
+                body.close();
+            } catch (Exception er) {}
         }
 
         fes = new FunctionEvaluationSource(new FileEvaluationSource(sourceName, null),
