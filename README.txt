@@ -1,3 +1,24 @@
+===============
+HELMA at nexxar
+===============
+
+2013-10-22:
+We at nexxar still use helma. Our CMS is based on helma 1.2.6 (sic!)
+and we are migrating to helma 1.7 next year.
+
+Since maintainance of the original repository seem to have ceased,
+we created a fork and try to maintain helma on our own.
+
+future plans
+------------
+
+* migrate our CMS to helma 1.7 and see what's in there.
+* investigate the possibility to let the tomcat module resurrect
+
+
+
+--------------------------------------------------------------------
+
 This is the README file for version 1.7.0 of the Helma Javascript
 Web Application Framework.
 
