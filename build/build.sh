@@ -2,8 +2,11 @@
 
 # export JAVA_HOME=/usr/lib/j2sdk1.4.0
 
-JAVA_BIN="`whereis -b -B /usr/bin  -f javac | sed -e 's#javac: ##'`"
-[ -z "$JAVA_HOME" -a ! -z "$JAVA_BIN" ] && JAVA_HOME=$(readlink -f $JAVA_BIN | sed "s:bin/javac::")
+[ "$(uname -s)" == "Darwin" ] && JAVACMD="`whereis java`"
+[ -z "$JAVACMD" ] && JAVACMD="`whereis -b -B /usr/bin  -f java | sed -e 's#java: ##'`"
+[ -z "$JAVA_HOME" -a ! -z "$JAVACMD" -a "$(uname -s)" == "Darwin" ] && JAVA_HOME=$(ruby -e "puts File.expand_path('$JAVACMD')" | sed "s:bin/java::")
+[ -z "$JAVA_HOME" -a ! -z "$JAVACMD" ] && JAVA_HOME=$(readlink -f $JAVACMD | sed "s:bin/java::")
+
 
 #--------------------------------------------
 # No need to edit anything past here
