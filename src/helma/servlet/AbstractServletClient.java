@@ -525,8 +525,13 @@ public abstract class AbstractServletClient extends HttpServlet {
         }
 
         // Parse any posted parameters in the input stream
+        String contentType = request.getContentType();
+        if (contentType != null) {
+            final String[] parts = contentType.split(";");
+            contentType = parts[0];
+        }
         if ("POST".equals(request.getMethod()) &&
-                "application/x-www-form-urlencoded".equals(request.getContentType())) {
+                "application/x-www-form-urlencoded".equals(contentType)) {
             try {
                 int max = request.getContentLength();
                 int len = 0;
