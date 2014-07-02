@@ -110,6 +110,14 @@ public final class Skin {
     }
 
     /**
+     * Return the list of macros found by the parser
+     * @return the list of macros
+     */
+    public Macro[] getMacros() {
+        return macros;
+    }
+
+    /**
      * Get the raw source text this skin was parsed from
      */
     public String getSource() {
@@ -186,9 +194,8 @@ public final class Skin {
         sandbox.add(macroname);
     }
 
-    class Macro {
-        final int start;
-        final int end;
+    public class Macro {
+        public final int start, end;
         String handler;
         String name;
         String fullName;
@@ -662,6 +669,21 @@ public final class Skin {
          */
         public String getFullName() {
             return fullName;
+        }
+        public String getName() {
+            return this.getFullName();
+        }
+
+        /**
+        * Return the list of  parameters
+        * @return the list of parameters
+        */
+        public Map getParameters() {
+            final HashMap parametersCopy = new HashMap();
+            if (parameters != null) {
+                parametersCopy.putAll(parameters);
+            }
+            return parametersCopy;
         }
     }
 }
