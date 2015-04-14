@@ -145,14 +145,34 @@ public final class Skin {
      */
     public void render(RequestEvaluator reval, Object thisObject, Map paramObject)
                 throws RedirectException {
+
         // check for endless skin recursion
+        reval.skinStack.push(new Object[] {this, thisObject});
         if (++reval.skinDepth > 50) {
-            throw new RuntimeException("Recursive skin invocation suspected");
+            StringBuilder listOfSkinsInStack = new StringBuilder();
+            listOfSkinsInStack.append("[ ");
+            for (int i = 0; i < reval.skinStack.size(); i++) {
+                final Object[] data = (Object[])reval.skinStack.get(i);
+                final Skin skinInStack = (Skin)data[0];
+
+                String hopContextName = (data[1] instanceof INode) ?
+                    ("<" + ((INode)data[1]).getFullName() + "/" + ((INode)data[1]).getID()  +  ">") :
+                    "<>";
+                String skinName = skinInStack.getName();
+                if (skinName == null) {
+                   skinName = "#/:#" + skinInStack.getSource() + "#:/#";
+                }
+                listOfSkinsInStack.append( (i > 0 ? ", \n" : "\n") + hopContextName + ":" + skinName );
+            }
+            listOfSkinsInStack.append("\n]");
+
+            throw new RuntimeException("Recursive skin invocation suspected. List of skins: " + listOfSkinsInStack.toString());
         }
 
         if (macros == null) {
             reval.res.writeCharArray(source, 0, sourceLength);
             reval.skinDepth--;
+            reval.skinStack.pop();
 
             return;
         }
@@ -179,6 +199,7 @@ public final class Skin {
             }
         } finally {
             reval.skinDepth--;
+            reval.skinStack.pop();
         }
     }
 
