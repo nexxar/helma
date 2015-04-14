@@ -422,7 +422,7 @@ public final class Node implements INode, Serializable {
     public String getElementName() {
         // if subnodes are also mounted as properties, try to get the "nice" prop value
         // instead of the id by turning the anonymous flag off.
-        long lastmod = Math.max(dbmap.getLastTypeChange(), lastmodified);
+        long lastmod = dbmap != null ? Math.max(dbmap.getLastTypeChange(), lastmodified) : 0;
         if ((parentHandle != null) && (lastNameCheck < lastmod) &&
             (dbmap != null) && (dbmap.isRelational())) {
             try {
