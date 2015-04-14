@@ -211,7 +211,9 @@ public final class NodeManager {
         }
 
         // try to get the node from the shared cache
-        node = (Node) cache.get(key);
+        synchronized (cache) {
+            node = (Node) cache.get(key);
+        }
 
         if ((node == null) || (node.getState() == Node.INVALID)) {
             // The requested node isn't in the shared cache. Synchronize with key to make sure only one
@@ -297,7 +299,9 @@ public final class NodeManager {
         }
 
         // try to get the node from the shared cache
-        node = (Node) cache.get(key);
+        synchronized (cache) {
+            node = (Node) cache.get(key);
+        }
 
         // check if we can use the cached node without further checks.
         // we need further checks for subnodes fetched by name if the subnodes were changed.
@@ -397,7 +401,9 @@ public final class NodeManager {
      * Register a node in the node cache.
      */
     public void registerNode(Node node) {
-        cache.put(node.getKey(), node);
+        synchronized (cache) {
+            cache.put(node.getKey(), node);
+        }
     }
 
 
@@ -405,7 +411,9 @@ public final class NodeManager {
      * Register a node in the node cache using the key argument.
      */
     protected void registerNode(Node node, Key key) {
-        cache.put(key, node);
+        synchronized (cache) {
+            cache.put(key, node);
+        }
     }
 
     /**
@@ -414,7 +422,9 @@ public final class NodeManager {
      */
     public void evictNode(Node node) {
         node.setState(INode.INVALID);
-        cache.remove(node.getKey());
+        synchronized (cache) {
+            cache.remove(node.getKey());
+        }
     }
 
     /**
@@ -422,13 +432,15 @@ public final class NodeManager {
      * it will be refetched from the database.
      */
     public void evictNodeByKey(Key key) {
-        Node n = (Node) cache.remove(key);
+        synchronized (cache) {
+            Node n = (Node) cache.remove(key);
 
-        if (n != null) {
-            n.setState(INode.INVALID);
+            if (n != null) {
+                n.setState(INode.INVALID);
 
-            if (!(key instanceof DbKey)) {
-                cache.remove(n.getKey());
+                if (!(key instanceof DbKey)) {
+                    cache.remove(n.getKey());
+                }
             }
         }
     }
@@ -438,7 +450,9 @@ public final class NodeManager {
      * remains valid, if it is present in the cache by other keys.
      */
     public void evictKey(Key key) {
-        cache.remove(key);
+        synchronized (cache) {
+            cache.remove(key);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -1160,7 +1174,11 @@ public final class NodeManager {
             // this does nothing for objects in the embedded database
             return;
         } else {
-            int missing = cache.containsKeys(keys);
+            int missing = 0;
+
+            synchronized (cache) {
+                missing = cache.containsKeys(keys);
+            }
 
             if (missing > 0) {
                 Connection con = dbm.getConnection();
@@ -1302,7 +1320,9 @@ public final class NodeManager {
 
                             Node groupnode = home.getGroupbySubnode(groupname, true);
 
-                            cache.put(groupnode.getKey(), groupnode);
+                            synchronized (cache) {
+                                cache.put(groupnode.getKey(), groupnode);
+                            }
                             groupnode.setSubnodes((List) groupbySubnodes.get(groupname));
                             groupnode.lastSubnodeFetch = System.currentTimeMillis();
                         }
@@ -1603,9 +1623,14 @@ public final class NodeManager {
                 }
 
                 // Check if node is already cached with primary Key.
+                node.markAs(Node.CLEAN);
                 if (!rel.usesPrimaryKey()) {
                     Key pk = node.getKey();
-                    Node existing = (Node) cache.get(pk);
+                    Node existing = null;
+
+                    synchronized (cache) {
+                        existing = (Node) cache.get(pk);
+                    }
 
                     if ((existing != null) && (existing.getState() != Node.INVALID)) {
                         node = existing;
@@ -1878,14 +1903,18 @@ public final class NodeManager {
      *  Get an array of the the keys currently held in the object cache
      */
     public Object[] getCacheEntries() {
-        return cache.getEntryArray();
+        synchronized (cache) {
+            return cache.getEntryArray();
+        }
     }
 
     /**
      * Get the number of elements in the object cache
      */
     public int countCacheEntries() {
-        return cache.size();
+        synchronized (cache) {
+           return cache.size();
+        }
     }
 
     /**
