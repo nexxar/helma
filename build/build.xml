@@ -90,8 +90,10 @@
             destdir="${build.classes}"
             debug="${debug}"
             deprecation="${deprecation}"
+            source="1.4"
             optimize="${optimize}">
             <classpath refid="build.class.path" />
+            <compilerarg  value="-Xlint:unchecked" />
         </javac>
         <rmic classname="helma.framework.core.RemoteApplication" base="${build.classes}"/>
     </target>
