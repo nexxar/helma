@@ -2,7 +2,13 @@
 
 # export JAVA_HOME=/usr/lib/j2sdk1.4.0
 
-[ "$(uname -s)" == "Darwin" ] && JAVACMD="`whereis java`"
+# on OSX use older JVMs, even if current java is set. Java 1.8 does not work
+if [ -z "$JAVACMD" -a "$(uname -s)" == "Darwin" ]; then
+    for version in 7 6 5 4; do
+       [ -z "$JAVACMD" -a -e "/System/Library/Frameworks/JavaVM.framework/Versions/1.$version/Home/bin/java" ] && JAVACMD="/System/Library/Frameworks/JavaVM.framework/Versions/1.$version/Home/bin/java"
+    done
+fi
+[ -z "$JAVACMD" -a "$(uname -s)" == "Darwin" ] && JAVACMD="`whereis java`"
 [ -z "$JAVACMD" ] && JAVACMD="`whereis -b -B /usr/bin  -f java | sed -e 's#java: ##'`"
 [ -z "$JAVA_HOME" -a ! -z "$JAVACMD" -a "$(uname -s)" == "Darwin" ] && JAVA_HOME=$(ruby -e "puts File.expand_path('$JAVACMD')" | sed "s:bin/java::")
 [ -z "$JAVA_HOME" -a ! -z "$JAVACMD" ] && JAVA_HOME=$(readlink -f $JAVACMD | sed "s:bin/java::")
