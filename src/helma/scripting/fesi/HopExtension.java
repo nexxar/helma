@@ -692,6 +692,7 @@ public final class HopExtension {
                 throw new EcmaScriptException("renderSkin requires one argument containing the skin name and an optional parameter object argument");
             }
 
+            String skinName = "";
             try {
                 Skin skin = null;
                 ESObject thisObject = global ? null : thisObj;
@@ -747,6 +748,10 @@ public final class HopExtension {
                 }
 
                 if (skin != null) {
+                    skinName = skin.getName();
+                    if (skinName == null) {
+                        skinName = skin.getSource();
+                    }
                     skin.render(engine.getRequestEvaluator(), javaObject, params);
                 } else {
                     res.write("[Skin not found: " + arguments[0] + "]");
@@ -760,7 +765,7 @@ public final class HopExtension {
                 throw redir;
             } catch (Exception x) {
                 x.printStackTrace();
-                throw new EcmaScriptException("renderSkin: " + x);
+                throw new EcmaScriptException("renderSkin '" + skinName + "': " + x);
             }
 
             return ESNull.theNull;
