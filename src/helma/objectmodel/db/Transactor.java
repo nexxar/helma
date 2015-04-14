@@ -372,6 +372,6 @@ public class Transactor extends Thread {
      * @return ...
      */
     public String toString() {
-        return "Transactor[" + tname + "]";
+        return "Transactor[" + this.getId() + ":" + tname + "]";
     }
 }

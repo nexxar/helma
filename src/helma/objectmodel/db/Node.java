@@ -2369,7 +2369,7 @@ public final class Node implements INode, Serializable {
      * @return ...
      */
     public String toString() {
-        return "HopObject " + name;
+        return "HopObject " + name + ":" + this.getID();
     }
 
     /**
