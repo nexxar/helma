@@ -167,6 +167,7 @@ public final class XmlDatabase implements IDatabase {
         try {
             XmlDatabaseReader reader = new XmlDatabaseReader(nmgr);
             Node node = reader.read(f);
+            node.markAs(INodeState.CLEAN);
 
             return node;
         } catch (RuntimeException x) {
@@ -198,6 +199,7 @@ public final class XmlDatabase implements IDatabase {
         writer.setMaxLevels(1);
 
         writer.write((Node) node);
+        ((Node) node).markAs(INodeState.CLEAN);
 
         writer.close();
     }

@@ -310,6 +310,10 @@ public final class Node implements INode, Serializable {
     }
 
     protected void markAs(int s) {
+        if (s == CLEAN || s == NEW) {
+            clearWriteLock();
+        }
+
         if ((state == INVALID) || (state == VIRTUAL) || (state == TRANSIENT)) {
             return;
         }
@@ -320,13 +324,11 @@ public final class Node implements INode, Serializable {
             Transactor tx = (Transactor) Thread.currentThread();
 
             if (s == CLEAN) {
-                clearWriteLock();
                 tx.dropNode(this);
             } else {
                 tx.visitNode(this);
 
                 if (s == NEW) {
-                    clearWriteLock();
                     tx.visitCleanNode(this);
                 }
             }
