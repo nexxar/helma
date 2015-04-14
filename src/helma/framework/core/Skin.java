@@ -46,6 +46,7 @@ public final class Skin {
     private char[] source;
     private int sourceLength;
     private HashSet sandbox;
+    private String skinName;
 
     /**
      * Create a skin without any restrictions on which macros are allowed to be called from it
@@ -122,6 +123,21 @@ public final class Skin {
      */
     public String getSource() {
         return new String(source, 0, sourceLength);
+    }
+
+    /**
+     * Get the possible name of the skin - for debuggin purposes
+     * if the skin was created from plain source code and no name was set, then "null" is returned.
+     */
+    public String getName() {
+        return this.skinName;
+    }
+
+    /**
+     * Get the raw source text this skin was parsed from
+     */
+    public void setName(final String newName) {
+        this.skinName = newName;
     }
 
     /**

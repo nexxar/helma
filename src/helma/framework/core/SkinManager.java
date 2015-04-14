@@ -88,7 +88,9 @@ public final class SkinManager implements FilenameFilter {
                     String skin = n.getString("skin");
 
                     if (skin != null) {
-                        return new Skin(skin, app);
+                        Skin skinObj =  new Skin(skin, app);
+                        skinObj.setName(skinname);
+                        return skinObj;
                     }
                 }
             }
