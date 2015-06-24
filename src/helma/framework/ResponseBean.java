@@ -17,6 +17,7 @@
 package helma.framework;
 
 import helma.framework.core.Application;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;
@@ -89,6 +90,14 @@ public class ResponseBean implements Serializable {
      */
     public void setCookie(String key, String value) {
         res.setCookie(key, value, -1, null, null);
+    }
+
+    /**
+     * Returns the ServletResponse instance for this Response.
+     * Returns null for internal and XML-RPC requests.
+     */
+    public HttpServletResponse getServletResponse() {
+        return res.getServletResponse();
     }
 
     /**

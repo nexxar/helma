@@ -19,6 +19,8 @@ package helma.framework;
 import helma.framework.core.Skin;
 import helma.objectmodel.*;
 import helma.util.*;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.security.*;
 import java.util.*;
@@ -103,10 +105,10 @@ public final class ResponseTrans implements Externalizable {
     public transient String error;
 
     // the map of form and cookie data
-    private transient Map values;
+    private transient Map values = new HashMap();
 
     // the map of macro handlers
-    private transient Map handlers;
+    private transient Map handlers = new HashMap();
 
     // the request trans for this response
     private transient RequestTrans reqtrans;
@@ -119,21 +121,10 @@ public final class ResponseTrans implements Externalizable {
 
     /**
      * Creates a new ResponseTrans object.
-     */
-    public ResponseTrans() {
-        super();
-        message = error = null;
-        values = new HashMap();
-        handlers = new HashMap();
-    }
-
-    /**
-     * Creates a new ResponseTrans object.
      *
-     * @param req ...
+     * @param req the RequestTrans for this response
      */
     public ResponseTrans(RequestTrans req) {
-        this();
         reqtrans = req;
     }
 
@@ -160,6 +151,14 @@ public final class ResponseTrans implements Externalizable {
      */
     public Map getMacroHandlers() {
         return handlers;
+    }
+
+    /**
+     * Returns the ServletResponse instance for this ResponseTrans.
+     * Returns null for internal and XML-RPC requests.
+     */
+    public HttpServletResponse getServletResponse() {
+        return reqtrans.getServletResponse();
     }
 
     /**

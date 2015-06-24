@@ -693,7 +693,7 @@ public final class RequestEvaluator implements Runnable {
         this.session = null;
         this.method = method;
         this.args = args;
-        this.res = new ResponseTrans();
+        this.res = new ResponseTrans(req);
         result = null;
         exception = null;
 
@@ -768,7 +768,7 @@ public final class RequestEvaluator implements Runnable {
         thisObject = object;
         method = functionName;
         this.args = args;
-        this.res = new ResponseTrans();
+        this.res = new ResponseTrans(req);
         result = null;
         exception = null;
 
@@ -808,7 +808,7 @@ public final class RequestEvaluator implements Runnable {
         thisObject = null;
         method = functionName;
         this.args = args;
-        res = new ResponseTrans();
+        res = new ResponseTrans(req);
         result = null;
         exception = null;
 

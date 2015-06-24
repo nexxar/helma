@@ -18,6 +18,8 @@ package helma.framework;
 
 import helma.objectmodel.*;
 import helma.util.Base64;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.*;
 
@@ -27,6 +29,14 @@ import java.util.*;
  */
 public class RequestTrans implements Externalizable {
     static final long serialVersionUID = 5398880083482000580L;
+
+    // HTTP methods
+    public final static String GET = "GET";
+    public final static String POST = "POST";
+
+    // the servlet request and response, may be null
+    HttpServletRequest request;
+    HttpServletResponse response;
 
     // the uri path of the request
     public String path;
@@ -38,7 +48,7 @@ public class RequestTrans implements Externalizable {
     private Map values;
 
     // the request method - 0 for GET, 1 for POST
-    private byte httpMethod = 0;
+    private String method;
 
     // timestamp of client-cached version, if present in request
     private long ifModifiedSince = -1;
@@ -57,16 +67,19 @@ public class RequestTrans implements Externalizable {
     /**
      *  Create a new Request transmitter with an empty data map.
      */
-    public RequestTrans() {
-        httpMethod = 0;
+    private RequestTrans() {
         values = new HashMap();
     }
 
     /**
      *  Create a new request transmitter with the given data map.
      */
-    public RequestTrans(byte method) {
-        httpMethod = method;
+    public RequestTrans(HttpServletRequest request,
+                        HttpServletResponse response, String path) {
+        method = request.getMethod();
+        this.request = request;
+        this.response = response;
+        this.path = path;
         values = new HashMap();
     }
 
@@ -96,6 +109,14 @@ public class RequestTrans implements Externalizable {
     }
 
     /**
+     * Returns the Servlet response for this request.
+     * Returns null for internal and XML-RPC requests.
+     */
+    public HttpServletResponse getServletResponse() {
+        return response;
+    }
+
+    /**
      *  The hash code is computed from the session id if available. This is used to
      *  detect multiple identic requests.
      */
@@ -122,14 +143,14 @@ public class RequestTrans implements Externalizable {
      *  Return true if this object represents a HTTP GET Request.
      */
     public boolean isGet() {
-        return httpMethod == 0;
+        return GET.equalsIgnoreCase(this.method);
     }
 
     /**
      *  Return true if this object represents a HTTP GET Request.
      */
     public boolean isPost() {
-        return httpMethod == 1;
+        return POST.equalsIgnoreCase(this.method);
     }
 
     /**
@@ -139,7 +160,7 @@ public class RequestTrans implements Externalizable {
         path = s.readUTF();
         session = s.readUTF();
         values = (Map) s.readObject();
-        httpMethod = s.readByte();
+        method = s.readUTF();
         ifModifiedSince = s.readLong();
         etags = (Set) s.readObject();
     }
@@ -151,7 +172,7 @@ public class RequestTrans implements Externalizable {
         s.writeUTF(path);
         s.writeUTF(session);
         s.writeObject(values);
-        s.writeByte(httpMethod);
+        s.writeUTF(method);
         s.writeLong(ifModifiedSince);
         s.writeObject(etags);
     }
