@@ -514,6 +514,7 @@ public final class NodeManager {
 
         StringBuffer b1 = dbm.getInsert();
         StringBuffer b2 = new StringBuffer(" ) VALUES ( ?");
+        StringBuffer debugValues = logSql ? new StringBuffer(" ) VALUES ( ") : null;
 
         String nameField = dbm.getNameField();
         String prototypeField = dbm.getPrototypeField();
@@ -529,21 +530,22 @@ public final class NodeManager {
             }
         }
 
+        String debugB1 = logSql ? b1.toString() : null;
         b1.append(b2.toString());
         b1.append(" )");
 
         // Connection con = dbm.getConnection();
         PreparedStatement stmt = con.prepareStatement(b1.toString());
 
-        if (logSql) {
-            app.logEvent("### insertNode: " + b1.toString());
-        }
 
         try {
             int stmtNumber = 1;
 
             // first column of insert statement is always the primary key
             stmt.setString(stmtNumber, node.getID());
+            if (logSql) {
+                debugValues.append(node.getID());
+            }
 
             Hashtable propMap = node.getPropMap();
 
@@ -567,6 +569,9 @@ public final class NodeManager {
                 if (p != null) {
                     if (p.getValue() == null) {
                         stmt.setNull(stmtNumber, columns[i].getType());
+                        if (logSql) {
+                            debugValues.append(", null ");
+                        }
                     } else {
                         switch (columns[i].getType()) {
                             case Types.BIT:
@@ -575,6 +580,9 @@ public final class NodeManager {
                             case Types.SMALLINT:
                             case Types.INTEGER:
                                 stmt.setLong(stmtNumber, p.getIntegerValue());
+                                if (logSql) {
+                                    debugValues.append(", ").append(p.getIntegerValue());
+                                }
 
                                 break;
 
@@ -584,6 +592,9 @@ public final class NodeManager {
                             case Types.NUMERIC:
                             case Types.DECIMAL:
                                 stmt.setDouble(stmtNumber, p.getFloatValue());
+                                if (logSql) {
+                                    debugValues.append(", ").append(p.getFloatValue());
+                                }
 
                                 break;
 
@@ -591,6 +602,9 @@ public final class NodeManager {
                             case Types.BINARY:
                             case Types.BLOB:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -606,6 +620,9 @@ public final class NodeManager {
                                     stmt.setCharacterStream(stmtNumber, r,
                                                             str.length());
                                 }
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -613,6 +630,9 @@ public final class NodeManager {
                             case Types.VARCHAR:
                             case Types.OTHER:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -620,16 +640,25 @@ public final class NodeManager {
                             case Types.TIME:
                             case Types.TIMESTAMP:
                                 stmt.setTimestamp(stmtNumber, p.getTimestampValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append(p.getTimestampValue().toString()).append("'");
+                                }
 
                                 break;
 
                             case Types.NULL:
                                 stmt.setNull(stmtNumber, 0);
+                                if (logSql) {
+                                    debugValues.append(", ").append("0");
+                                }
 
                                 break;
 
                             default:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
                         }
@@ -637,14 +666,29 @@ public final class NodeManager {
                 } else {
                     if (name.equals(nameField)) {
                         stmt.setString(stmtNumber, node.getName());
+                        if (logSql) {
+                            debugValues.append(", '").append(node.getName()).append("'");
+                        }
+
                     } else if (name.equals(prototypeField)) {
                         stmt.setString(stmtNumber, node.getPrototype());
+                        if (logSql) {
+                            debugValues.append(", '").append(node.getPrototype()).append("'");
+                        }
+
                     } else {
                         stmt.setNull(stmtNumber, columns[i].getType());
+                        if (logSql) {
+                            debugValues.append(", ").append(columns[i].getType());
+                        }
+
                     }
                 }
             }
 
+            if (logSql) {
+                app.logEvent("### insertNode: " + debugB1 + debugValues.toString() + " );");
+            }
             stmt.executeUpdate();
         } finally {
             if (stmt != null) {
@@ -679,6 +723,10 @@ public final class NodeManager {
             dbm.getColumns();
 
             StringBuffer b = dbm.getUpdate();
+            StringBuffer bDebug = logSql ? new StringBuffer() : null;
+            if (logSql) {
+                bDebug.append(b);
+            }
 
             boolean comma = false;
 
@@ -705,12 +753,21 @@ public final class NodeManager {
 
                 if (comma) {
                     b.append(", ");
+                    if (logSql) {
+                        bDebug.append(", ");
+                    }
                 } else {
                     comma = true;
                 }
 
                 b.append(rel.getDbField());
                 b.append(" = ?");
+                if (logSql) {
+                    bDebug.append(rel.getDbField())
+                          .append(" = :?:")
+                          .append(i)
+                          .append("::");
+                }
             }
 
             // if no columns were updated, return
@@ -722,21 +779,32 @@ public final class NodeManager {
             b.append(dbm.getIDField());
             b.append(" = ");
 
+            if (logSql) {
+                bDebug.append(" WHERE ")
+                      .append(dbm.getIDField())
+                      .append(" = ");
+            }
+
             if (dbm.needsQuotes(dbm.getIDField())) {
                 b.append("'");
                 b.append(escape(node.getID()));
                 b.append("'");
+
+                if (logSql) {
+                    bDebug.append("'").append(escape(node.getID())).append("'");
+                }
             } else {
                 b.append(node.getID());
+
+                if (logSql) {
+                    bDebug.append(node.getID());
+                }
             }
 
             Connection con = dbm.getConnection();
             PreparedStatement stmt = con.prepareStatement(b.toString());
 
-            if (logSql) {
-                app.logEvent("### updateNode: " + b.toString());
-            }
-
+            String debugSQLStatement = bDebug.toString();
             int stmtNumber = 0;
 
             try {
@@ -753,6 +821,9 @@ public final class NodeManager {
 
                     if (p.getValue() == null) {
                         stmt.setNull(stmtNumber, rel.getColumnType());
+                        if (logSql) {
+                            debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "null");
+                        }
                     } else {
                         switch (rel.getColumnType()) {
                             case Types.BIT:
@@ -761,6 +832,9 @@ public final class NodeManager {
                             case Types.SMALLINT:
                             case Types.INTEGER:
                                 stmt.setLong(stmtNumber, p.getIntegerValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", String.valueOf(p.getIntegerValue()) );
+                                }
 
                                 break;
 
@@ -770,6 +844,9 @@ public final class NodeManager {
                             case Types.NUMERIC:
                             case Types.DECIMAL:
                                 stmt.setDouble(stmtNumber, p.getFloatValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", String.valueOf(p.getFloatValue()) );
+                                }
 
                                 break;
 
@@ -777,6 +854,9 @@ public final class NodeManager {
                             case Types.BINARY:
                             case Types.BLOB:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -791,6 +871,9 @@ public final class NodeManager {
 
                                     stmt.setCharacterStream(stmtNumber, r, str.length());
                                 }
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -798,6 +881,9 @@ public final class NodeManager {
                             case Types.VARCHAR:
                             case Types.OTHER:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -805,16 +891,25 @@ public final class NodeManager {
                             case Types.TIME:
                             case Types.TIMESTAMP:
                                 stmt.setTimestamp(stmtNumber, p.getTimestampValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getTimestampValue().toString()) + "'");
+                                }
 
                                 break;
 
                             case Types.NULL:
                                 stmt.setNull(stmtNumber, 0);
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'0'");
+                                }
 
                                 break;
 
                             default:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
                         }
@@ -825,6 +920,10 @@ public final class NodeManager {
                     if (!rel.isPrivate()) {
                         markMappingAsUpdated = true;
                     }
+                }
+
+                if (logSql) {
+                    app.logEvent("### updateNode: " + debugSQLStatement);
                 }
 
                 stmt.executeUpdate();
