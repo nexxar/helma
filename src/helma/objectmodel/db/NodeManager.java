@@ -524,7 +524,7 @@ public final class NodeManager {
             String name = columns[i].getName();
 
             if (((rel != null) && (rel.isPrimitive() || rel.isReference())) ||
-                    name.equals(nameField) || name.equals(prototypeField)) {
+                    name.equals(nameField) || name.equalsIgnoreCase(prototypeField)) {
                 b1.append(", " + columns[i].getName());
                 b2.append(", ?");
             }
@@ -560,7 +560,7 @@ public final class NodeManager {
                 String name = columns[i].getName();
 
                 if (!((rel != null) && (rel.isPrimitive() || rel.isReference())) &&
-                        !name.equals(nameField) && !name.equals(prototypeField)) {
+                        !name.equals(nameField) && !name.equalsIgnoreCase(prototypeField)) {
                     continue;
                 }
 
@@ -670,7 +670,7 @@ public final class NodeManager {
                             debugValues.append(", '").append(node.getName()).append("'");
                         }
 
-                    } else if (name.equals(prototypeField)) {
+                    } else if (name.equalsIgnoreCase(prototypeField)) {
                         stmt.setString(stmtNumber, node.getPrototype());
                         if (logSql) {
                             debugValues.append(", '").append(node.getPrototype()).append("'");
