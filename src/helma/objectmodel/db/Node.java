@@ -520,7 +520,7 @@ public final class Node implements INode, Serializable {
     public Key getKey() {
         if (state == TRANSIENT) {
             Thread.dumpStack();
-            throw new RuntimeException("getKey called on transient Node: " + this);
+            throw new RuntimeException("getKey called on transient Node: " + this + " (object with name: " + this.getName() + "/Key: " +  primaryKey + "/ prototype: " + this.getPrototype()  + ")");
         }
 
         if ((dbmap == null) && (prototype != null) && (nmgr != null)) {
