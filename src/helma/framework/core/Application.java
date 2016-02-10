@@ -560,7 +560,7 @@ public final class Application implements IPathElement, Runnable {
             throw stopped;
         } catch (Exception x) {
             errorCount += 1;
-            res = new ResponseTrans();
+            res = new ResponseTrans(req);
             res.write("Error in application: <b>" + x.getMessage() + "</b>");
         } finally {
             if (primaryRequest) {

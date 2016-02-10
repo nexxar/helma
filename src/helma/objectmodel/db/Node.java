@@ -246,7 +246,7 @@ public final class Node implements INode, Serializable {
         this.subnodes = subnodes;
     }
 
-    protected synchronized void checkWriteLock() {
+    protected void checkWriteLock() {
         // System.err.println ("registering writelock for "+this.getName ()+" ("+lock+") to "+Thread.currentThread ());
         if (state == TRANSIENT) {
             return; // no need to lock transient node
@@ -265,14 +265,44 @@ public final class Node implements INode, Serializable {
                                            " was invalidated by another thread.");
         }
 
-        if ((lock != null) && (lock != current) && lock.isAlive() && lock.isActive()) {
-            nmgr.logEvent("Concurrency conflict for " + this + ", lock held by " + lock);
-            throw new ConcurrencyException("Tried to modify " + this +
-                                           " from two threads at the same time.");
+        // instead of immediatly aborting the transactor as soon as a node can not be locked
+        // the transactor tries 10 to acquire the lock after waiting some time.
+        // it is necessary to abort after some tries to avoid lock starvation
+        Transactor lockOwner = null;
+        boolean wasAbleToAcquireLock = false;
+        final int maxTriesToAcquireLock = 50;
+        int didTriesToAcquireLock = 0;
+        final long  millisecondsToWait = 50;
+        while(!wasAbleToAcquireLock && ++didTriesToAcquireLock <= maxTriesToAcquireLock) {
+
+            // try to acquire lock
+            synchronized(this) {
+                wasAbleToAcquireLock = (lock == null) || (lock == current) || !lock.isAlive() || !lock.isActive();
+                if (wasAbleToAcquireLock) {
+                    current.visitNode(this);
+                    lock = current;
+                    lockOwner = current;
+
+                } else {
+                    lockOwner = lock;
+                }
+            }
+
+            // sleep thread for some time to try again if we do not have a lock
+            if (!wasAbleToAcquireLock) {
+                try {
+                    current.sleep(millisecondsToWait);
+                } catch(java.lang.InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
 
-        current.visitNode(this);
-        lock = current;
+        if (!wasAbleToAcquireLock) {
+            nmgr.logEvent("Concurrency conflict for " + this + " (" + this.getFullName() + "), lock held by " + lockOwner);
+            throw new ConcurrencyException("Tried to modify " + this + " (" + this.getFullName() + ")" +
+                " from two threads at the same time.");
+        }
     }
 
     protected synchronized void clearWriteLock() {
@@ -280,6 +310,10 @@ public final class Node implements INode, Serializable {
     }
 
     protected void markAs(int s) {
+        if (s == CLEAN || s == NEW) {
+            clearWriteLock();
+        }
+
         if ((state == INVALID) || (state == VIRTUAL) || (state == TRANSIENT)) {
             return;
         }
@@ -290,13 +324,11 @@ public final class Node implements INode, Serializable {
             Transactor tx = (Transactor) Thread.currentThread();
 
             if (s == CLEAN) {
-                clearWriteLock();
                 tx.dropNode(this);
             } else {
                 tx.visitNode(this);
 
                 if (s == NEW) {
-                    clearWriteLock();
                     tx.visitCleanNode(this);
                 }
             }
@@ -390,7 +422,7 @@ public final class Node implements INode, Serializable {
     public String getElementName() {
         // if subnodes are also mounted as properties, try to get the "nice" prop value
         // instead of the id by turning the anonymous flag off.
-        long lastmod = Math.max(dbmap.getLastTypeChange(), lastmodified);
+        long lastmod = dbmap != null ? Math.max(dbmap.getLastTypeChange(), lastmodified) : 0;
         if ((parentHandle != null) && (lastNameCheck < lastmod) &&
             (dbmap != null) && (dbmap.isRelational())) {
             try {
@@ -2337,7 +2369,7 @@ public final class Node implements INode, Serializable {
      * @return ...
      */
     public String toString() {
-        return "HopObject " + name;
+        return "HopObject " + name + ":" + this.getID();
     }
 
     /**

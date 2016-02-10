@@ -66,6 +66,7 @@ public final class RequestEvaluator implements Runnable {
     // the type of request to be serviced
     int reqtype;
     protected int skinDepth;
+    protected Stack skinStack = new Stack();
 
     /**
      *  Create a new RequestEvaluator for this application.
@@ -305,6 +306,7 @@ public final class RequestEvaluator implements Runnable {
 
                                     // reset skin recursion detection counter
                                     skinDepth = 0;
+                                    skinStack.clear();
 
                                     // try calling onRequest() function on object before
                                     // calling the actual action
@@ -321,6 +323,7 @@ public final class RequestEvaluator implements Runnable {
 
                                     // reset skin recursion detection counter
                                     skinDepth = 0;
+                                    skinStack.clear();
 
                                     // do the actual action invocation
                                     scriptingEngine.invoke(currentElement, action,
@@ -461,6 +464,7 @@ public final class RequestEvaluator implements Runnable {
 
                             // reset skin recursion detection counter
                             skinDepth = 0;
+                            skinStack.clear();
 
                             result = scriptingEngine.invoke(currentElement, method, args,
                                                             true);
@@ -523,6 +527,7 @@ public final class RequestEvaluator implements Runnable {
 
                                 // reset skin recursion detection counter
                                 skinDepth = 0;
+                                skinStack.clear();
 
                                 result = scriptingEngine.invoke(thisObject, method, args,
                                                                 false);
@@ -688,7 +693,7 @@ public final class RequestEvaluator implements Runnable {
         this.session = null;
         this.method = method;
         this.args = args;
-        this.res = new ResponseTrans();
+        this.res = new ResponseTrans(req);
         result = null;
         exception = null;
 
@@ -763,7 +768,7 @@ public final class RequestEvaluator implements Runnable {
         thisObject = object;
         method = functionName;
         this.args = args;
-        this.res = new ResponseTrans();
+        this.res = new ResponseTrans(req);
         result = null;
         exception = null;
 
@@ -803,7 +808,7 @@ public final class RequestEvaluator implements Runnable {
         thisObject = null;
         method = functionName;
         this.args = args;
-        res = new ResponseTrans();
+        res = new ResponseTrans(req);
         result = null;
         exception = null;
 

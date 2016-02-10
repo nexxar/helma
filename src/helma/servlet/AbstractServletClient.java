@@ -119,7 +119,7 @@ public abstract class AbstractServletClient extends HttpServlet {
 
     protected void execute(HttpServletRequest request, HttpServletResponse response,
                            byte method) {
-        RequestTrans reqtrans = new RequestTrans(method);
+        RequestTrans reqtrans = new RequestTrans(request, response, null);
         // get app and path from original request path
         // String pathInfo = request.getPathInfo ();
         // String appID = getAppID (pathInfo);

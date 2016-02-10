@@ -211,7 +211,9 @@ public final class NodeManager {
         }
 
         // try to get the node from the shared cache
-        node = (Node) cache.get(key);
+        synchronized (cache) {
+            node = (Node) cache.get(key);
+        }
 
         if ((node == null) || (node.getState() == Node.INVALID)) {
             // The requested node isn't in the shared cache. Synchronize with key to make sure only one
@@ -297,7 +299,9 @@ public final class NodeManager {
         }
 
         // try to get the node from the shared cache
-        node = (Node) cache.get(key);
+        synchronized (cache) {
+            node = (Node) cache.get(key);
+        }
 
         // check if we can use the cached node without further checks.
         // we need further checks for subnodes fetched by name if the subnodes were changed.
@@ -397,7 +401,9 @@ public final class NodeManager {
      * Register a node in the node cache.
      */
     public void registerNode(Node node) {
-        cache.put(node.getKey(), node);
+        synchronized (cache) {
+            cache.put(node.getKey(), node);
+        }
     }
 
 
@@ -405,7 +411,9 @@ public final class NodeManager {
      * Register a node in the node cache using the key argument.
      */
     protected void registerNode(Node node, Key key) {
-        cache.put(key, node);
+        synchronized (cache) {
+            cache.put(key, node);
+        }
     }
 
     /**
@@ -414,7 +422,9 @@ public final class NodeManager {
      */
     public void evictNode(Node node) {
         node.setState(INode.INVALID);
-        cache.remove(node.getKey());
+        synchronized (cache) {
+            cache.remove(node.getKey());
+        }
     }
 
     /**
@@ -422,13 +432,15 @@ public final class NodeManager {
      * it will be refetched from the database.
      */
     public void evictNodeByKey(Key key) {
-        Node n = (Node) cache.remove(key);
+        synchronized (cache) {
+            Node n = (Node) cache.remove(key);
 
-        if (n != null) {
-            n.setState(INode.INVALID);
+            if (n != null) {
+                n.setState(INode.INVALID);
 
-            if (!(key instanceof DbKey)) {
-                cache.remove(n.getKey());
+                if (!(key instanceof DbKey)) {
+                    cache.remove(n.getKey());
+                }
             }
         }
     }
@@ -438,7 +450,9 @@ public final class NodeManager {
      * remains valid, if it is present in the cache by other keys.
      */
     public void evictKey(Key key) {
-        cache.remove(key);
+        synchronized (cache) {
+            cache.remove(key);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -500,6 +514,7 @@ public final class NodeManager {
 
         StringBuffer b1 = dbm.getInsert();
         StringBuffer b2 = new StringBuffer(" ) VALUES ( ?");
+        StringBuffer debugValues = logSql ? new StringBuffer(" ) VALUES ( ") : null;
 
         String nameField = dbm.getNameField();
         String prototypeField = dbm.getPrototypeField();
@@ -509,27 +524,28 @@ public final class NodeManager {
             String name = columns[i].getName();
 
             if (((rel != null) && (rel.isPrimitive() || rel.isReference())) ||
-                    name.equals(nameField) || name.equals(prototypeField)) {
+                    name.equals(nameField) || name.equalsIgnoreCase(prototypeField)) {
                 b1.append(", " + columns[i].getName());
                 b2.append(", ?");
             }
         }
 
+        String debugB1 = logSql ? b1.toString() : null;
         b1.append(b2.toString());
         b1.append(" )");
 
         // Connection con = dbm.getConnection();
         PreparedStatement stmt = con.prepareStatement(b1.toString());
 
-        if (logSql) {
-            app.logEvent("### insertNode: " + b1.toString());
-        }
 
         try {
             int stmtNumber = 1;
 
             // first column of insert statement is always the primary key
             stmt.setString(stmtNumber, node.getID());
+            if (logSql) {
+                debugValues.append(node.getID());
+            }
 
             Hashtable propMap = node.getPropMap();
 
@@ -544,7 +560,7 @@ public final class NodeManager {
                 String name = columns[i].getName();
 
                 if (!((rel != null) && (rel.isPrimitive() || rel.isReference())) &&
-                        !name.equals(nameField) && !name.equals(prototypeField)) {
+                        !name.equals(nameField) && !name.equalsIgnoreCase(prototypeField)) {
                     continue;
                 }
 
@@ -553,6 +569,9 @@ public final class NodeManager {
                 if (p != null) {
                     if (p.getValue() == null) {
                         stmt.setNull(stmtNumber, columns[i].getType());
+                        if (logSql) {
+                            debugValues.append(", null ");
+                        }
                     } else {
                         switch (columns[i].getType()) {
                             case Types.BIT:
@@ -561,6 +580,9 @@ public final class NodeManager {
                             case Types.SMALLINT:
                             case Types.INTEGER:
                                 stmt.setLong(stmtNumber, p.getIntegerValue());
+                                if (logSql) {
+                                    debugValues.append(", ").append(p.getIntegerValue());
+                                }
 
                                 break;
 
@@ -570,6 +592,9 @@ public final class NodeManager {
                             case Types.NUMERIC:
                             case Types.DECIMAL:
                                 stmt.setDouble(stmtNumber, p.getFloatValue());
+                                if (logSql) {
+                                    debugValues.append(", ").append(p.getFloatValue());
+                                }
 
                                 break;
 
@@ -577,6 +602,9 @@ public final class NodeManager {
                             case Types.BINARY:
                             case Types.BLOB:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -592,6 +620,9 @@ public final class NodeManager {
                                     stmt.setCharacterStream(stmtNumber, r,
                                                             str.length());
                                 }
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -599,6 +630,9 @@ public final class NodeManager {
                             case Types.VARCHAR:
                             case Types.OTHER:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
 
@@ -606,16 +640,25 @@ public final class NodeManager {
                             case Types.TIME:
                             case Types.TIMESTAMP:
                                 stmt.setTimestamp(stmtNumber, p.getTimestampValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append(p.getTimestampValue().toString()).append("'");
+                                }
 
                                 break;
 
                             case Types.NULL:
                                 stmt.setNull(stmtNumber, 0);
+                                if (logSql) {
+                                    debugValues.append(", ").append("0");
+                                }
 
                                 break;
 
                             default:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugValues.append(", '").append( escape(p.getStringValue()) ).append("'");
+                                }
 
                                 break;
                         }
@@ -623,14 +666,29 @@ public final class NodeManager {
                 } else {
                     if (name.equals(nameField)) {
                         stmt.setString(stmtNumber, node.getName());
-                    } else if (name.equals(prototypeField)) {
+                        if (logSql) {
+                            debugValues.append(", '").append(node.getName()).append("'");
+                        }
+
+                    } else if (name.equalsIgnoreCase(prototypeField)) {
                         stmt.setString(stmtNumber, node.getPrototype());
+                        if (logSql) {
+                            debugValues.append(", '").append(node.getPrototype()).append("'");
+                        }
+
                     } else {
                         stmt.setNull(stmtNumber, columns[i].getType());
+                        if (logSql) {
+                            debugValues.append(", ").append(columns[i].getType());
+                        }
+
                     }
                 }
             }
 
+            if (logSql) {
+                app.logEvent("### insertNode: " + debugB1 + debugValues.toString() + " );");
+            }
             stmt.executeUpdate();
         } finally {
             if (stmt != null) {
@@ -665,6 +723,10 @@ public final class NodeManager {
             dbm.getColumns();
 
             StringBuffer b = dbm.getUpdate();
+            StringBuffer bDebug = logSql ? new StringBuffer() : null;
+            if (logSql) {
+                bDebug.append(b);
+            }
 
             boolean comma = false;
 
@@ -691,12 +753,21 @@ public final class NodeManager {
 
                 if (comma) {
                     b.append(", ");
+                    if (logSql) {
+                        bDebug.append(", ");
+                    }
                 } else {
                     comma = true;
                 }
 
                 b.append(rel.getDbField());
                 b.append(" = ?");
+                if (logSql) {
+                    bDebug.append(rel.getDbField())
+                          .append(" = :?:")
+                          .append(i)
+                          .append("::");
+                }
             }
 
             // if no columns were updated, return
@@ -708,21 +779,32 @@ public final class NodeManager {
             b.append(dbm.getIDField());
             b.append(" = ");
 
+            if (logSql) {
+                bDebug.append(" WHERE ")
+                      .append(dbm.getIDField())
+                      .append(" = ");
+            }
+
             if (dbm.needsQuotes(dbm.getIDField())) {
                 b.append("'");
                 b.append(escape(node.getID()));
                 b.append("'");
+
+                if (logSql) {
+                    bDebug.append("'").append(escape(node.getID())).append("'");
+                }
             } else {
                 b.append(node.getID());
+
+                if (logSql) {
+                    bDebug.append(node.getID());
+                }
             }
 
             Connection con = dbm.getConnection();
             PreparedStatement stmt = con.prepareStatement(b.toString());
 
-            if (logSql) {
-                app.logEvent("### updateNode: " + b.toString());
-            }
-
+            String debugSQLStatement = bDebug.toString();
             int stmtNumber = 0;
 
             try {
@@ -739,6 +821,9 @@ public final class NodeManager {
 
                     if (p.getValue() == null) {
                         stmt.setNull(stmtNumber, rel.getColumnType());
+                        if (logSql) {
+                            debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "null");
+                        }
                     } else {
                         switch (rel.getColumnType()) {
                             case Types.BIT:
@@ -747,6 +832,9 @@ public final class NodeManager {
                             case Types.SMALLINT:
                             case Types.INTEGER:
                                 stmt.setLong(stmtNumber, p.getIntegerValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", String.valueOf(p.getIntegerValue()) );
+                                }
 
                                 break;
 
@@ -756,6 +844,9 @@ public final class NodeManager {
                             case Types.NUMERIC:
                             case Types.DECIMAL:
                                 stmt.setDouble(stmtNumber, p.getFloatValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", String.valueOf(p.getFloatValue()) );
+                                }
 
                                 break;
 
@@ -763,6 +854,9 @@ public final class NodeManager {
                             case Types.BINARY:
                             case Types.BLOB:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -777,6 +871,9 @@ public final class NodeManager {
 
                                     stmt.setCharacterStream(stmtNumber, r, str.length());
                                 }
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -784,6 +881,9 @@ public final class NodeManager {
                             case Types.VARCHAR:
                             case Types.OTHER:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
 
@@ -791,16 +891,25 @@ public final class NodeManager {
                             case Types.TIME:
                             case Types.TIMESTAMP:
                                 stmt.setTimestamp(stmtNumber, p.getTimestampValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getTimestampValue().toString()) + "'");
+                                }
 
                                 break;
 
                             case Types.NULL:
                                 stmt.setNull(stmtNumber, 0);
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'0'");
+                                }
 
                                 break;
 
                             default:
                                 stmt.setString(stmtNumber, p.getStringValue());
+                                if (logSql) {
+                                    debugSQLStatement = debugSQLStatement.replace(":?:" + i + "::", "'" + escape(p.getStringValue()) + "'");
+                                }
 
                                 break;
                         }
@@ -811,6 +920,10 @@ public final class NodeManager {
                     if (!rel.isPrivate()) {
                         markMappingAsUpdated = true;
                     }
+                }
+
+                if (logSql) {
+                    app.logEvent("### updateNode: " + debugSQLStatement);
                 }
 
                 stmt.executeUpdate();
@@ -1160,7 +1273,11 @@ public final class NodeManager {
             // this does nothing for objects in the embedded database
             return;
         } else {
-            int missing = cache.containsKeys(keys);
+            int missing = 0;
+
+            synchronized (cache) {
+                missing = cache.containsKeys(keys);
+            }
 
             if (missing > 0) {
                 Connection con = dbm.getConnection();
@@ -1302,7 +1419,9 @@ public final class NodeManager {
 
                             Node groupnode = home.getGroupbySubnode(groupname, true);
 
-                            cache.put(groupnode.getKey(), groupnode);
+                            synchronized (cache) {
+                                cache.put(groupnode.getKey(), groupnode);
+                            }
                             groupnode.setSubnodes((List) groupbySubnodes.get(groupname));
                             groupnode.lastSubnodeFetch = System.currentTimeMillis();
                         }
@@ -1603,9 +1722,14 @@ public final class NodeManager {
                 }
 
                 // Check if node is already cached with primary Key.
+                node.markAs(Node.CLEAN);
                 if (!rel.usesPrimaryKey()) {
                     Key pk = node.getKey();
-                    Node existing = (Node) cache.get(pk);
+                    Node existing = null;
+
+                    synchronized (cache) {
+                        existing = (Node) cache.get(pk);
+                    }
 
                     if ((existing != null) && (existing.getState() != Node.INVALID)) {
                         node = existing;
@@ -1878,14 +2002,18 @@ public final class NodeManager {
      *  Get an array of the the keys currently held in the object cache
      */
     public Object[] getCacheEntries() {
-        return cache.getEntryArray();
+        synchronized (cache) {
+            return cache.getEntryArray();
+        }
     }
 
     /**
      * Get the number of elements in the object cache
      */
     public int countCacheEntries() {
-        return cache.size();
+        synchronized (cache) {
+           return cache.size();
+        }
     }
 
     /**

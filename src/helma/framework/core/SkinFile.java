@@ -57,6 +57,7 @@ public final class SkinFile implements Updatable {
         this.name = name;
         this.file = null;
         skin = new Skin(body, app);
+        skin.setName(name);
     }
 
     /**
@@ -108,6 +109,7 @@ public final class SkinFile implements Updatable {
 
             reader.close();
             skin = new Skin(c, length, app);
+            skin.setName(file.getName());
         } catch (IOException x) {
             if (inReader != null) {
                 try {
